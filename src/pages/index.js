@@ -6,6 +6,8 @@ import Layout from 'components/Layout';
 import Container from 'components/Container';
 import Map from 'components/Map';
 
+import { locations } from 'data/locations’;
+
 const LOCATION = {
   lat: 38.9072,
   lng: -77.0369
@@ -22,7 +24,24 @@ const IndexPage = () => {
    */
 
   async function mapEffect({ leafletElement } = {}) {
+    if ( !leafletElement ) return;
+
+    leafletElement.eachLayer((layer) => leafletElement.removeLayer(layer));
+
+    const tripPoints = createTripPointsGeoJson({ locations });
+    const tripLines = createTripLinesGeoJson({ locations });
  
+    const tripPointsGeoJsonLayers = new L.geoJson(tripPoints, {
+    pointToLayer: tripStopPointToLayer
+    });
+
+    const tripLinesGeoJsonLayers = new L.geoJson(tripLines);
+
+    tripPointsGeoJsonLayers.addTo(leafletElement);
+    tripLinesGeoJsonLayers.addTo(leafletElement);
+
+    const bounds = tripPointsGeoJsonLayers.getBounds();
+    leafletElement.fitBounds(bounds);
   }
 
   const mapSettings = {
@@ -54,3 +73,108 @@ const IndexPage = () => {
 };
 
 export default IndexPage;
+
+function createTripPointsGeoJson({ locations } = {}) {
+  return {
+    “type”: “FeatureCollection”,
+    “features”: locations.map(({ placename, location = {}, image, date, todo = [] } = {}) => {
+      const { lat, lng } = location;
+      return {
+        “type”: “Feature”,
+        “properties”: {
+          placename,
+          todo,
+          date,
+          image
+        },
+        “geometry”: {
+          “type”: “Point”,
+          “coordinates”: [ lng, lat ]
+        }
+      }
+    })
+  }
+}
+
+function createTripLinesGeoJson({ locations } = {}) {
+  return {
+    “type”: “FeatureCollection”,
+    “features”: locations.map((stop = {}, index) => {
+      const prevStop = locations[index - 1];
+
+      if ( !prevStop ) return [];
+
+      const { placename, location = {}, date, todo = [] } = stop;
+      const { lat, lng } = location;
+      const properties = {
+        placename,
+        todo,
+        date
+      };
+
+      const { location: prevLocation = {} } = prevStop;
+      const { lat: prevLat, lng: prevLng } = prevLocation;
+
+      return {
+        type: ‘Feature’,
+        properties,
+        geometry: {
+          type: ‘LineString’,
+          coordinates: [
+            [ prevLng, prevLat ],
+            [ lng, lat ]
+          ]
+        }
+      }
+    })
+  }
+}
+
+function tripStopPointToLayer( feature = {}, latlng ) {
+  const { properties = {} } = feature;
+  const { placename, todo = [], image, date } = properties;
+
+  const list = todo.map(what => `<li>${ what }</li>`);
+  let listString = ‘’;
+  let imageString = ‘’;
+
+  if ( Array.isArray(list) && list.length > 0 ) {
+    listString = list.join(‘’);
+    listString = `
+      <p>Things we will or have done…</p>
+      <ul>${listString}</ul>
+    `
+  }
+
+  if ( image ) {
+    imageString = `
+      <span class=“trip-stop-image” style=“background-image: url(${image})”>${placename}</span>
+    `;
+  }
+
+  const text = `
+    <div class=“trip-stop”>
+      ${ imageString }
+      <div class=“trip-stop-content”>
+        <h2>${placename}</h2>
+        <p class=“trip-stop-date”>${date}</p>
+        ${ listString }
+      </div>
+    </div>
+  `;
+
+  const popup = L.popup({
+    maxWidth: 400
+  }).setContent(text);
+
+  const layer = L.marker( latlng, {
+    icon: L.divIcon({
+      className: ‘icon’,
+      html: `<span class=“icon-trip-stop”></span>`,
+      iconSize: 20
+    }),
+    riseOnHover: true
+  }).bindPopup(popup);
+
+  return layer;
+}

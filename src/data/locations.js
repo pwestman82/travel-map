@@ -1,24 +1,24 @@
 export const locations = [
   {
-    placename: ‘Herndon, VA’,
-    date: ‘August 1, 2015’,
+    placename: ‘Berlin, Germany’,
+    date: ‘June 1, 2020’,
     location: {
-      lat: 38.958988,
-      lng: -77.417320
+      lat: 52.5200,
+      lng: 13.4050
     },
     todo: [
-      ‘Where we start! 🚀’
+      ‘Starting point! 🚀’
     ]
   },
   {
-    placename: ‘Middlesboro, KY',
-    date: ‘August 1, 2015’,
+    placename: ‘Warsaw, Poland',
+    date: ‘August 1, 2020’,
     location: {
-      lat: 36.627517,
-      lng: -83.621635
+      lat: 52.2297,
+      lng: -21.022
     },
     todo: [
-      ‘Cumberland Gap 🌳’
+      ‘Palace of Culture and Science ’
     ]
   }
 ];
