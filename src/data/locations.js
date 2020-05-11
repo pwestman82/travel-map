@@ -11,7 +11,7 @@ export const locations = [
     ]
   },
   {
-    placename: ‘Warsaw, Poland',
+    placename: ‘Warsaw, Poland';
     date: ‘August 1, 2020’,
     location: {
       lat: 52.2297,
